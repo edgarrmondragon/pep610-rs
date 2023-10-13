@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct VCSInfo {
     pub vcs: String,
     pub requested_revision: Option<String>,
@@ -9,12 +9,12 @@ pub struct VCSInfo {
     pub resolved_revision_type: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ArchiveInfo {
     pub hash: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct DirInfo {
     pub editable: Option<bool>,
 }
@@ -25,7 +25,7 @@ impl DirInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Info {
     #[serde(rename = "vcs_info")]
     VCS(VCSInfo),
@@ -37,10 +37,124 @@ pub enum Info {
     Dir(DirInfo),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct DirectURL {
     pub url: String,
 
     #[serde(flatten)]
     pub info: Info,
+}
+
+#[cfg(test)]
+mod test {
+    use serde_json;
+
+    use super::*;
+
+    #[test]
+    fn test_vcs_info() {
+        let raw: &str = r#"
+        {
+            "url": "git+https://github.com/meltano/meltano.git@main",
+            "vcs_info": {
+                "vcs": "git",
+                "commit_id": "1234567890abcdef1234567890abcdef12345678",
+                "requested_revision": "main"
+            }
+        }
+        "#;
+        let actual: DirectURL = serde_json::from_str(raw).unwrap();
+        let expected = DirectURL {
+            url: "git+https://github.com/meltano/meltano.git@main".to_string(),
+            info: Info::VCS(VCSInfo {
+                vcs: "git".to_string(),
+                requested_revision: Some("main".to_string()),
+                commit_id: "1234567890abcdef1234567890abcdef12345678".to_string(),
+                resolved_revision: None,
+                resolved_revision_type: None,
+            }),
+        };
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_archive_info() {
+        let raw: &str = r#"
+        {
+            "url": "https://path/to/archive.tar.gz",
+            "archive_info": {
+                "hash": "sha256=1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+            }
+        }
+        "#;
+        let actual: DirectURL = serde_json::from_str(raw).unwrap();
+        let expected = DirectURL {
+            url: "https://path/to/archive.tar.gz".to_string(),
+            info: Info::Archive(ArchiveInfo {
+                hash: Some(
+                    "sha256=1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+                        .to_string(),
+                ),
+            }),
+        };
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_dir_info() {
+        let raw: &str = r#"
+        {
+            "url": "file:///Users/edgarramirez/Code/meltano/meltano/.venv/lib/python3.11/site-packages/meltano-3.0.0.dist-info/direct_url.json",
+            "dir_info": {
+                "editable": true
+            }
+        }
+        "#;
+        let actual: DirectURL = serde_json::from_str(raw).unwrap();
+        let expected = DirectURL {
+            url: "file:///Users/edgarramirez/Code/meltano/meltano/.venv/lib/python3.11/site-packages/meltano-3.0.0.dist-info/direct_url.json".to_string(),
+            info: Info::Dir(DirInfo {
+                editable: Some(true),
+            }),
+        };
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_dir_info_not_editable() {
+        let raw: &str = r#"
+        {
+            "url": "file:///Users/edgarramirez/Code/meltano/meltano/.venv/lib/python3.11/site-packages/meltano-3.0.0.dist-info/direct_url.json",
+            "dir_info": {
+                "editable": false
+            }
+        }
+        "#;
+        let actual: DirectURL = serde_json::from_str(raw).unwrap();
+        let expected = DirectURL {
+            url: "file:///Users/edgarramirez/Code/meltano/meltano/.venv/lib/python3.11/site-packages/meltano-3.0.0.dist-info/direct_url.json".to_string(),
+            info: Info::Dir(DirInfo {
+                editable: Some(false),
+            }),
+        };
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_dir_info_editable_missing() {
+        let raw: &str = r#"
+        {
+            "url": "file:///Users/edgarramirez/Code/meltano/meltano/.venv/lib/python3.11/site-packages/meltano-3.0.0.dist-info/direct_url.json",
+            "dir_info": {}
+        }
+        "#;
+        let actual: DirectURL = serde_json::from_str(raw).unwrap();
+        let expected = DirectURL {
+            url: "file:///Users/edgarramirez/Code/meltano/meltano/.venv/lib/python3.11/site-packages/meltano-3.0.0.dist-info/direct_url.json".to_string(),
+            info: Info::Dir(DirInfo {
+                editable: None,
+            }),
+        };
+        assert_eq!(actual, expected);
+    }
 }
