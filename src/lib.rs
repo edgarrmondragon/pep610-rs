@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use url::Url;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct VCSInfo {
@@ -39,7 +40,7 @@ pub enum Info {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct DirectURL {
-    pub url: String,
+    pub url: Url,
 
     #[serde(flatten)]
     pub info: Info,
@@ -65,7 +66,7 @@ mod test {
         "#;
         let actual: DirectURL = serde_json::from_str(raw).unwrap();
         let expected = DirectURL {
-            url: "git+https://github.com/meltano/meltano.git@main".to_string(),
+            url: Url::parse("git+https://github.com/meltano/meltano.git@main").unwrap(),
             info: Info::VCS(VCSInfo {
                 vcs: "git".to_string(),
                 requested_revision: Some("main".to_string()),
@@ -89,7 +90,7 @@ mod test {
         "#;
         let actual: DirectURL = serde_json::from_str(raw).unwrap();
         let expected = DirectURL {
-            url: "https://path/to/archive.tar.gz".to_string(),
+            url: Url::parse("https://path/to/archive.tar.gz").unwrap(),
             info: Info::Archive(ArchiveInfo {
                 hash: Some(
                     "sha256=1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
@@ -112,7 +113,7 @@ mod test {
         "#;
         let actual: DirectURL = serde_json::from_str(raw).unwrap();
         let expected = DirectURL {
-            url: "file:///Users/edgarramirez/Code/meltano/meltano/.venv/lib/python3.11/site-packages/meltano-3.0.0.dist-info/direct_url.json".to_string(),
+            url: Url::parse("file:///Users/edgarramirez/Code/meltano/meltano/.venv/lib/python3.11/site-packages/meltano-3.0.0.dist-info/direct_url.json").unwrap(),
             info: Info::Dir(DirInfo {
                 editable: Some(true),
             }),
@@ -132,7 +133,7 @@ mod test {
         "#;
         let actual: DirectURL = serde_json::from_str(raw).unwrap();
         let expected = DirectURL {
-            url: "file:///Users/edgarramirez/Code/meltano/meltano/.venv/lib/python3.11/site-packages/meltano-3.0.0.dist-info/direct_url.json".to_string(),
+            url: Url::parse("file:///Users/edgarramirez/Code/meltano/meltano/.venv/lib/python3.11/site-packages/meltano-3.0.0.dist-info/direct_url.json").unwrap(),
             info: Info::Dir(DirInfo {
                 editable: Some(false),
             }),
@@ -150,7 +151,7 @@ mod test {
         "#;
         let actual: DirectURL = serde_json::from_str(raw).unwrap();
         let expected = DirectURL {
-            url: "file:///Users/edgarramirez/Code/meltano/meltano/.venv/lib/python3.11/site-packages/meltano-3.0.0.dist-info/direct_url.json".to_string(),
+            url: Url::parse("file:///Users/edgarramirez/Code/meltano/meltano/.venv/lib/python3.11/site-packages/meltano-3.0.0.dist-info/direct_url.json").unwrap(),
             info: Info::Dir(DirInfo {
                 editable: None,
             }),
