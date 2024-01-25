@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -13,6 +15,7 @@ pub struct VCSInfo {
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ArchiveInfo {
     pub hash: Option<String>,
+    pub hashes: Option<HashMap<String, String>>
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -79,7 +82,7 @@ mod test {
     }
 
     #[test]
-    fn test_archive_info() {
+    fn test_archive_info_legacy_hash() {
         let raw: &str = r#"
         {
             "url": "https://path/to/archive.tar.gz",
@@ -95,6 +98,36 @@ mod test {
                 hash: Some(
                     "sha256=1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
                         .to_string(),
+                ),
+                hashes: None,
+            }),
+        };
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_archive_info() {
+        let raw: &str = r#"
+        {
+            "url": "https://path/to/archive.tar.gz",
+            "archive_info": {
+                "hashes": {
+                    "sha256": "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                    "md5": "1234567890abcdef1234567890abcdef"
+                }
+            }
+        }
+        "#;
+        let actual: DirectURL = serde_json::from_str(raw).unwrap();
+        let expected = DirectURL {
+            url: Url::parse("https://path/to/archive.tar.gz").unwrap(),
+            info: Info::Archive(ArchiveInfo {
+                hash: None,
+                hashes: Some(
+                    vec![
+                        ("sha256".to_string(), "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string()),
+                        ("md5".to_string(), "1234567890abcdef1234567890abcdef".to_string()),
+                    ].into_iter().collect()
                 ),
             }),
         };
