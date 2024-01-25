@@ -18,7 +18,7 @@ fn print_url_info(contents: DirectURL) {
             println!("  * editable: {:?}", dir_info.is_editable());
         }
         Info::Archive(archive_info) => {
-            println!("  * hash: {:?}", archive_info.hash);
+            println!("  * hashes: {:?}", archive_info.hashes);
         }
         Info::VCS(vcs_info) => {
             println!("  * vcs: {:?}", vcs_info.vcs);
